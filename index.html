@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Онлайн запись</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      background: #060608;
+      color: #ddd8d0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+
+    .card {
+      background: #0e0f11;
+      border: 1px solid rgba(74,77,84,0.4);
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      margin-top: 24px;
+    }
+
+    .business-name {
+      font-size: 28px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .business-type {
+      font-size: 13px;
+      color: #4a4d54;
+      text-align: center;
+      margin-bottom: 32px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      color: #4a4d54;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .service-btn {
+      background: #07080a;
+      border: 1px solid rgba(74,77,84,0.4);
+      border-radius: 14px;
+      padding: 14px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+      color: #ddd8d0;
+    }
+
+    .service-btn:hover { border-color: rgba(61,158,146,0.5); }
+
+    .service-btn.selected {
+      border-color: #3d9e92;
+      background: rgba(61,158,146,0.1);
+    }
+
+    .service-name { font-size: 13px; font-weight: 600; }
+    .service-price { font-size: 12px; color: #3d9e92; margin-top: 4px; }
+
+    .calendar {
+      background: #07080a;
+      border: 1px solid rgba(74,77,84,0.3);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(74,77,84,0.2);
+    }
+
+    .cal-nav {
+      background: none;
+      border: none;
+      color: #3d9e92;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .cal-nav:hover { background: rgba(61,158,146,0.1); }
+
+    .cal-month { font-weight: 700; font-size: 15px; }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      padding: 12px;
+    }
+
+    .cal-day-label {
+      text-align: center;
+      font-size: 10px;
+      color: #4a4d54;
+      font-weight: 600;
+      padding: 4px;
+      text-transform: uppercase;
+    }
+
+    .cal-day {
+      text-align: center;
+      padding: 8px 4px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .cal-day:hover:not(.disabled):not(.empty) { background: rgba(61,158,146,0.15); }
+    .cal-day.today { color: #3d9e92; font-weight: 700; }
+    .cal-day.selected { background: #3d9e92; color: #fff; font-weight: 700; }
+    .cal-day.disabled { color: rgba(74,77,84,0.4); cursor: default; }
+    .cal-day.empty { cursor: default; }
+
+    .slots-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .slot-btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(74,77,84,0.35);
+      background: #07080a;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ddd8d0;
+      transition: all 0.15s;
+    }
+
+    .slot-btn:hover:not(.taken) { border-color: rgba(61,158,146,0.5); }
+    .slot-btn.selected { border-color: #3d9e92; background: rgba(61,158,146,0.1); color: #3d9e92; }
+    .slot-btn.taken { border-color: rgba(74,77,84,0.2); color: rgba(74,77,84,0.4); cursor: default; text-decoration: line-through; }
+
+    input {
+      width: 100%;
+      padding: 13px 16px;
+      background: #07080a;
+      border: 1px solid rgba(74,77,84,0.4);
+      border-radius: 12px;
+      color: #ddd8d0;
+      font-size: 15px;
+      font-family: inherit;
+      margin-bottom: 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    input:focus { border-color: rgba(61,158,146,0.5); }
+    input::placeholder { color: #4a4d54; }
+
+    textarea {
+      width: 100%;
+      padding: 13px 16px;
+      background: #07080a;
+      border: 1px solid rgba(74,77,84,0.4);
+      border-radius: 12px;
+      color: #ddd8d0;
+      font-size: 15px;
+      font-family: inherit;
+      resize: none;
+      height: 80px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus { border-color: rgba(61,158,146,0.5); }
+    textarea::placeholder { color: #4a4d54; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: #3d9e92;
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: opacity 0.15s;
+      font-family: inherit;
+    }
+
+    .submit-btn:hover { opacity: 0.9; }
+    .submit-btn:disabled { background: rgba(74,77,84,0.3); cursor: default; }
+
+    .success-screen {
+      text-align: center;
+      padding: 40px 0;
+      display: none;
+    }
+
+    .success-icon { font-size: 60px; margin-bottom: 20px; }
+    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: #4a4d54; line-height: 1.6; }
+
+    .loading { text-align: center; padding: 40px; color: #4a4d54; }
+    .error-msg { color: #a01020; font-size: 13px; margin-top: 8px; }
+
+    @media (max-width: 420px) {
+      .card { padding: 20px 16px; }
+      .services-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card" id="main-card">
+  <div id="loading" class="loading">Загрузка...</div>
+
+  <div id="form-content" style="display:none">
+    <div class="business-name" id="biz-name"></div>
+    <div class="business-type" id="biz-type"></div>
+
+    <!-- Услуга -->
+    <div id="services-section">
+      <div class="section-label">Выберите услугу</div>
+      <div class="services-grid" id="services-grid"></div>
+    </div>
+
+    <!-- Дата -->
+    <div class="section-label">Дата</div>
+    <div class="calendar">
+      <div class="cal-header">
+        <button class="cal-nav" id="prev-month">‹</button>
+        <span class="cal-month" id="cal-title"></span>
+        <button class="cal-nav" id="next-month">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <!-- Время -->
+    <div id="slots-section" style="display:none">
+      <div class="section-label">Время</div>
+      <div class="slots-grid" id="slots-grid"></div>
+    </div>
+
+    <!-- Контакты -->
+    <div class="section-label">Ваши данные</div>
+    <input type="text" id="client-name" placeholder="Имя" />
+    <input type="tel" id="client-phone" placeholder="Телефон" />
+    <textarea id="client-note" placeholder="Комментарий (необязательно)"></textarea>
+
+    <button class="submit-btn" id="submit-btn" disabled>Записаться</button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <div class="success-screen" id="success-screen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">Вы записаны!</div>
+    <div class="success-sub" id="success-details"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://nwmczqsugimvrwlimxtj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_O4Qchdzcl0hId_2EC3z3Ug_wSopGD1O';
+
+  const slug = new URLSearchParams(window.location.search).get('slug') || window.location.pathname.split('/').pop();
+
+  let business = null;
+  let services = [];
+  let selectedService = null;
+  let selectedDate = null;
+  let selectedTime = null;
+  let takenSlots = [];
+  let currentMonth = new Date();
+  let timeSlotsEnabled = true;
+  let slotDuration = 60;
+
+  const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const DAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const BIZ_TYPES = { cafe: 'Кафе / Ресторан', services: 'Сфера услуг', production: 'Производство' };
+
+  async function api(path, opts = {}) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+        ...opts.headers
+      },
+      ...opts
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+
+  async function init() {
+    try {
+      const bizData = await api(`businesses?slug=eq.${slug}&select=*`);
+      if (!bizData.length) { document.getElementById('loading').textContent = 'Бизнес не найден'; return; }
+      business = bizData[0];
+
+      timeSlotsEnabled = business.settings?.timeSlotsEnabled !== false;
+      slotDuration = business.settings?.slotDuration || 60;
+
+      document.getElementById('biz-name').textContent = business.name;
+      document.getElementById('biz-type').textContent = BIZ_TYPES[business.type] || business.type;
+      document.title = business.name + ' — Запись';
+
+      services = await api(`services?business_id=eq.${business.id}&active=eq.true&select=*`);
+
+      if (services.length > 0) {
+        renderServices();
+      } else {
+        document.getElementById('services-section').style.display = 'none';
+      }
+
+      renderCalendar();
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('form-content').style.display = 'block';
+
+      // Слушаем поля
+      document.getElementById('client-name').addEventListener('input', checkReady);
+      document.getElementById('client-phone').addEventListener('input', checkReady);
+      document.getElementById('submit-btn').addEventListener('click', submit);
+      document.getElementById('prev-month').addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth() - 1); renderCalendar(); });
+      document.getElementById('next-month').addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendar(); });
+
+    } catch (e) {
+      document.getElementById('loading').textContent = 'Ошибка загрузки: ' + e.message;
+    }
+  }
+
+  function renderServices() {
+    const grid = document.getElementById('services-grid');
+    grid.innerHTML = '';
+    services.forEach(s => {
+      const btn = document.createElement('div');
+      btn.className = 'service-btn';
+      btn.innerHTML = `<div class="service-name">${s.name}</div><div class="service-price">${s.price > 0 ? s.price + ' ₽' : 'Цена по запросу'}</div>`;
+      btn.addEventListener('click', () => {
+        selectedService = s;
+        document.querySelectorAll('.service-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        checkReady();
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  function renderCalendar() {
+    const title = document.getElementById('cal-title');
+    const grid = document.getElementById('cal-grid');
+
+    const y = currentMonth.getFullYear();
+    const m = currentMonth.getMonth();
+    title.textContent = `${MONTHS[m]} ${y}`;
+
+    grid.innerHTML = '';
+
+    // Заголовки
+    DAYS.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-day-label';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(y, m, 1).getDay();
+    const offset = firstDay === 0 ? 6 : firstDay - 1;
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    for (let i = 0; i < offset; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-day empty';
+      grid.appendChild(el);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(y, m, d);
+      const el = document.createElement('div');
+      el.className = 'cal-day';
+      el.textContent = d;
+
+      if (date < today) {
+        el.classList.add('disabled');
+      } else {
+        if (date.toDateString() === today.toDateString()) el.classList.add('today');
+        const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        if (selectedDate === dateStr) el.classList.add('selected');
+        el.addEventListener('click', () => selectDate(dateStr, el));
+      }
+
+      grid.appendChild(el);
+    }
+  }
+
+  async function selectDate(dateStr, el) {
+    selectedDate = dateStr;
+    selectedTime = null;
+    document.querySelectorAll('.cal-day').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+
+    if (timeSlotsEnabled) {
+      await loadSlots(dateStr);
+    } else {
+      document.getElementById('slots-section').style.display = 'none';
+    }
+    checkReady();
+  }
+
+  async function loadSlots(dateStr) {
+    const section = document.getElementById('slots-section');
+    const grid = document.getElementById('slots-grid');
+    grid.innerHTML = '<span style="color:#4a4d54;font-size:13px">Загрузка...</span>';
+    section.style.display = 'block';
+
+    const from = business.settings?.hoursFrom || '09:00';
+    const to = business.settings?.hoursTo || '21:00';
+    const dur = slotDuration;
+
+    // Получаем занятые слоты
+    try {
+      const bookings = await api(`bookings?business_id=eq.${business.id}&date=eq.${dateStr}&status=neq.cancelled&select=time_start`);
+      takenSlots = bookings.map(b => b.time_start.slice(0,5));
+    } catch { takenSlots = []; }
+
+    grid.innerHTML = '';
+    const slots = generateSlots(from, to, dur);
+
+    slots.forEach(slot => {
+      const btn = document.createElement('button');
+      btn.className = 'slot-btn';
+      btn.textContent = slot;
+      const taken = takenSlots.includes(slot);
+      if (taken) {
+        btn.classList.add('taken');
+        btn.title = 'Занято';
+      } else {
+        btn.addEventListener('click', () => {
+          selectedTime = slot;
+          document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          checkReady();
+        });
+      }
+      grid.appendChild(btn);
+    });
+  }
+
+  function generateSlots(from, to, dur) {
+    const slots = [];
+    let [h, m] = from.split(':').map(Number);
+    const [eh, em] = to.split(':').map(Number);
+    const endMin = eh * 60 + em;
+    while (h * 60 + m < endMin) {
+      slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+      m += dur;
+      if (m >= 60) { h += Math.floor(m/60); m = m % 60; }
+    }
+    return slots;
+  }
+
+  function checkReady() {
+    const name = document.getElementById('client-name').value.trim();
+    const phone = document.getElementById('client-phone').value.trim();
+    const hasService = services.length === 0 || selectedService;
+    const hasTime = !timeSlotsEnabled || selectedTime;
+    const ok = name && phone && selectedDate && hasService && hasTime;
+    document.getElementById('submit-btn').disabled = !ok;
+  }
+
+  async function submit() {
+    const name = document.getElementById('client-name').value.trim();
+    const phone = document.getElementById('client-phone').value.trim();
+    const note = document.getElementById('client-note').value.trim();
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-msg');
+
+    btn.disabled = true;
+    btn.textContent = 'Отправка...';
+    err.textContent = '';
+
+    try {
+      const payload = {
+        business_id: business.id,
+        service_id: selectedService?.id || null,
+        client_name: name,
+        client_phone: phone,
+        note: note || null,
+        date: selectedDate,
+        time_start: selectedTime || '00:00',
+        status: 'pending'
+      };
+
+      await api('bookings', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      document.getElementById('form-content').style.display = 'none';
+      const s = document.getElementById('success-screen');
+      s.style.display = 'block';
+
+      const dateFormatted = new Date(selectedDate + 'T00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+      document.getElementById('success-details').innerHTML =
+        `${selectedService ? '<b>' + selectedService.name + '</b><br>' : ''}${dateFormatted}${selectedTime ? ' в ' + selectedTime : ''}<br><br>Ждём вас в <b>${business.name}</b>!`;
+
+    } catch (e) {
+      err.textContent = 'Ошибка отправки. Попробуйте ещё раз.';
+      btn.disabled = false;
+      btn.textContent = 'Записаться';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
